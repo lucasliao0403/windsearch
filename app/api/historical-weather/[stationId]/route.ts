@@ -6,10 +6,10 @@ const WINDBORNE_API_BASE = "https://sfc.windbornesystems.com";
 
 export async function GET(
   request: Request,
-  { params }: { params: { stationId: string } }
+  { params }: { params: Promise<{ stationId: string }> }
 ) {
   try {
-    const { stationId } = params;
+    const { stationId } = await params;
     const response = await fetch(
       `${WINDBORNE_API_BASE}/historical_weather?station=${stationId}`
     );

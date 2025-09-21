@@ -2,11 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { ChartData } from './WeatherCharts';
+
+
+interface Station {
+  station_id: string;
+  station_name: string;
+  latitude: number;
+  longitude: number;
+  distance?: number;
+}
 
 interface StreamingAnalysisProps {
   query: string;
-  stations: any[];
-  onChartsReceived: (chartData: any) => void;
+  stations: Station[];
+  onChartsReceived: (chartData: ChartData) => void;
 }
 
 export default function StreamingAnalysis({ query, stations, onChartsReceived }: StreamingAnalysisProps) {
@@ -27,9 +37,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
 
     console.log('🚀 [STREAM] Starting analysis for', stations.length, 'stations');
 
-    const eventSource = new EventSource('/api/analyze', {
-      // Note: EventSource doesn't support POST directly, we'll need to modify this
-    });
+    // Note: EventSource doesn't support POST directly, using fetch instead
 
     // We need to use fetch instead for POST requests
     startAnalysis();
@@ -102,12 +110,12 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
 
   if (error) {
     return (
-      <div className="bg-red-900/20 border border-red-500 rounded-lg p-6">
+      <div className="bg-red-900/20 border border-red-500 rounded-2xl p-6">
         <h3 className="text-xl font-semibold text-red-400 mb-2">Analysis Error</h3>
         <p className="text-red-300">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg"
+          className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl"
         >
           Retry
         </button>
@@ -116,15 +124,15 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
       {/* Quick Analysis */}
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out">
         <div className="flex items-center gap-3 mb-4">
           <h3 className="text-xl font-semibold">Quick Analysis</h3>
           {isLoading && (
-            <div className="flex items-center gap-2 text-blue-400">
+            <div className="flex items-center gap-2 text-blue-400 animate-in fade-in duration-500">
               <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm">Analyzing data...</span>
+              <span className="text-sm animate-pulse">Analyzing data...</span>
             </div>
           )}
         </div>
@@ -170,13 +178,13 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
 
       {/* Detailed Summary */}
       {(summary || isGeneratingSummary) && (
-        <div className="bg-gray-800 rounded-lg p-6">
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-bottom-8 duration-700 delay-300">
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-xl font-semibold">Weather Summary</h3>
             {isGeneratingSummary && (
-              <div className="flex items-center gap-2 text-yellow-400">
+              <div className="flex items-center gap-2 text-yellow-400 animate-in fade-in duration-500">
                 <div className="w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm">Creating summary...</span>
+                <span className="text-sm animate-pulse">Creating summary...</span>
               </div>
             )}
           </div>

@@ -25,7 +25,7 @@ interface WeatherPoint {
   station_name: string;
 }
 
-interface ChartData {
+export interface ChartData {
   temperature: WeatherPoint[];
   pressure: WeatherPoint[];
   wind: WeatherPoint[];
@@ -37,9 +37,7 @@ interface ChartData {
       end: string;
     } | null;
   };
-}
-
-interface WeatherChartsProps {
+} interface WeatherChartsProps {
   data: ChartData;
 }
 
@@ -51,7 +49,7 @@ const COLORS = [
 export default function WeatherCharts({ data }: WeatherChartsProps) {
   if (!data || data.temperature.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <p className="text-gray-400">No chart data available</p>
       </div>
     );
@@ -96,20 +94,20 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
     }));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700 delay-200">
       {/* Summary Stats */}
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out">
         <h3 className="text-xl font-semibold mb-4">Data Summary</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
+          <div className="animate-in fade-in duration-700 delay-300 hover:scale-105 transition-transform duration-300">
             <div className="text-2xl font-bold text-blue-400">{data.summary.totalPoints}</div>
             <div className="text-gray-400">Total Readings</div>
           </div>
-          <div>
+          <div className="animate-in fade-in duration-700 delay-400 hover:scale-105 transition-transform duration-300">
             <div className="text-2xl font-bold text-green-400">{data.summary.stations}</div>
             <div className="text-gray-400">Weather Stations</div>
           </div>
-          <div>
+          <div className="animate-in fade-in duration-700 delay-500 hover:scale-105 transition-transform duration-300">
             <div className="text-2xl font-bold text-yellow-400">
               {data.summary.timeRange ?
                 `${Math.round((new Date(data.summary.timeRange.end).getTime() - new Date(data.summary.timeRange.start).getTime()) / (1000 * 60 * 60))}h` :
@@ -121,7 +119,7 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       </div>
 
       {/* Temperature Chart */}
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <h3 className="text-xl font-semibold mb-4">Temperature Trends</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timelineData}>
@@ -162,7 +160,7 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       </div>
 
       {/* Pressure Chart */}
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <h3 className="text-xl font-semibold mb-4">Atmospheric Pressure</h3>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={timelineData}>
@@ -202,7 +200,7 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       </div>
 
       {/* Wind Speed Chart */}
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <h3 className="text-xl font-semibold mb-4">Wind Speed</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timelineData}>
@@ -243,7 +241,7 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       </div>
 
       {/* Temperature vs Pressure Scatter */}
-      <div className="bg-gray-800 rounded-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <h3 className="text-xl font-semibold mb-4">Temperature vs Pressure Correlation</h3>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart>

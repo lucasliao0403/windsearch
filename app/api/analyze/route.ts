@@ -10,7 +10,7 @@ const anthropic = new Anthropic({
 const WINDBORNE_API_BASE = "https://sfc.windbornesystems.com";
 
 // Load prompts from file
-let PROMPTS: Record<string, string> = {};
+const PROMPTS: Record<string, string> = {};
 try {
   const promptsPath = path.join(process.cwd(), 'prompts.txt');
   const promptsData = fs.readFileSync(promptsPath, 'utf8');
@@ -41,11 +41,19 @@ interface StationData {
   data: WeatherPoint[];
 }
 
+interface StationRequest {
+  station_id: string;
+  station_name: string;
+  latitude: number;
+  longitude: number;
+  distance?: number;
+}
+
 export async function POST(request: Request) {
   console.log('📊 [ANALYZE] Starting weather data analysis');
 
   try {
-    const { query, stations } = await request.json();
+    const { query, stations }: { query: string; stations: StationRequest[] } = await request.json();
     console.log('📥 [ANALYZE] Received query:', query);
     console.log('📍 [ANALYZE] Stations to analyze:', stations.length);
 
@@ -55,7 +63,7 @@ export async function POST(request: Request) {
 
     // Step 1: Fetch weather data for all stations
     console.log('🌤️ [ANALYZE] Fetching weather data for stations...');
-    const stationDataPromises = stations.map(async (station: any) => {
+    const stationDataPromises = stations.map(async (station: StationRequest) => {
       try {
         const response = await fetch(
           `${WINDBORNE_API_BASE}/historical_weather?station=${station.station_id}`
@@ -180,7 +188,7 @@ async function* generateAnalysisStream(query: string, stationData: StationData[]
   try {
     const stream = await anthropic.messages.create({
       model: 'claude-3-5-haiku-latest',
-      max_tokens: 1000,
+      max_tokens: 150,
       messages: [{
         role: 'user',
         content: prompt
@@ -189,7 +197,7 @@ async function* generateAnalysisStream(query: string, stationData: StationData[]
     });
 
     for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text') {
+      if (chunk.type === 'content_block_delta' && 'text' in chunk.delta) {
         yield chunk.delta.text;
       }
     }
@@ -213,7 +221,7 @@ async function generateSonnetSummary(query: string, stationData: StationData[], 
     const temps = points.map(p => p.temperature).filter(t => t != null);
     const pressures = points.map(p => p.pressure).filter(p => p != null);
     const winds = points.map(p => Math.sqrt(p.wind_x * p.wind_x + p.wind_y * p.wind_y)).filter(w => w != null);
-    const dewpoints = points.map(p => p.dewpoint).filter(d => d != null);
+    // const dewpoints = points.map(p => p.dewpoint).filter(d => d != null);
 
     const stats = {
       temperature: temps.length > 0 ? {
@@ -275,11 +283,18 @@ async function generateSonnetSummary(query: string, stationData: StationData[], 
   }
 }
 
+interface ChartPoint extends WeatherPoint {
+  station_id: string;
+  station_name: string;
+  wind_speed: number;
+  timestamp_date: string;
+}
+
 function prepareChartData(stationData: StationData[]) {
   console.log('📊 [CHARTS] Preparing chart data for', stationData.length, 'stations');
 
   // Combine all data points with station info
-  const allPoints: any[] = [];
+  const allPoints: ChartPoint[] = [];
 
   stationData.forEach(station => {
     station.data.forEach(point => {

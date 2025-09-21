@@ -12,7 +12,7 @@ const MAX_DISTANCE_KM = 200;
 const MAX_STATION_COUNT = 20;
 
 // Load prompts from file
-let PROMPTS: Record<string, string> = {};
+const PROMPTS: Record<string, string> = {};
 try {
   const promptsPath = path.join(process.cwd(), 'prompts.txt');
   const promptsData = fs.readFileSync(promptsPath, 'utf8');

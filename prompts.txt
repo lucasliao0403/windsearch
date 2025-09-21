@@ -28,20 +28,12 @@ Select the most relevant station numbers for this specific query. Consider:
 Return ONLY a JSON array of station numbers (1-{stationCount}): [1, 3, 7, ...]
 
 ## WEATHER_ANALYSIS_PROMPT
-Analyze the following weather data for the query: "{query}"
+Weather query: "{query}"
 
-Station Data Summary:
+Station data:
 {stationData}
 
-Provide a comprehensive weather analysis including:
-
-1. **Overview**: Brief summary of current conditions across all stations
-2. **Key Trends**: Temperature, pressure, and wind patterns observed
-3. **Geographic Insights**: How conditions vary across different locations
-4. **Notable Observations**: Any unusual patterns, extremes, or interesting findings
-5. **Implications**: What this data means for the requested query
-
-Format your response in clear markdown with proper headings and bullet points. Be specific about numbers and trends, but keep explanations accessible to general users.
+Provide a 2-3 sentence summary of current weather conditions. Focus on temperature ranges, notable wind/pressure patterns, and regional variations. Be factual and concise - no markdown formatting.
 
 ## SONNET_SUMMARY_PROMPT
 Create a concise weather summary for: "{query}"
