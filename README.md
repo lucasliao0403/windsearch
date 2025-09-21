@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-Windsearch
-=======
 # WindSearch
 
 A natural language weather search engine that fetches real-time data from global weather stations and provides AI-powered analysis.
@@ -39,4 +36,3 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
->>>>>>> Stashed changes
