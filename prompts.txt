@@ -59,6 +59,44 @@ Use appropriate language for data freshness:
 
 Keep it conversational and accessible. Use specific numbers but explain what they mean for regular people. Total length should be under 200 words.
 
+## QUERY_DATA_VALIDATION_PROMPT
+You are a smart weather analysis validator. Today's date is {currentDate}.
+
+User Query: "{query}"
+Available Data:
+{dataInfo}
+Data Age: {dataAge} hours old
+Total Points: {totalPoints}
+
+Your job: Determine if this data can reasonably answer the user's query.
+
+GUIDELINES:
+1. **Future Predictions**: Allow reasonable short-term forecasting (1-3 days) based on recent trends
+2. **Historical Analysis**: Accept any historical data for past weather questions
+3. **Current Conditions**: Recent data (hours to weeks old) is fine for "current" weather
+4. **Seasonal Queries**: Allow seasonal/monthly analysis even with older data
+5. **Trend Analysis**: Any data span can show trends and patterns
+
+ACCEPT queries like:
+- "Weather tomorrow" (can extrapolate from recent trends)
+- "Will it rain next week" (reasonable short-term prediction)
+- "Weather in January" (historical analysis)
+- "Current conditions" (recent data is sufficient)
+- "Temperature trends" (any data period works)
+
+REJECT only if:
+- No data at all (0 points)
+- Data is completely corrupted
+- Query asks for very specific future details beyond reasonable forecasting (like "exact temperature next month")
+
+Default to isValid: true - be very permissive.
+
+Respond with ONLY a JSON object:
+{
+  "isValid": boolean,
+  "reason": "explanation if invalid"
+}
+
 ## DATA_VALIDATION_PROMPT
 You are a data quality validator for weather analysis. Today's date is 2025-09-21. Examine this weather data and determine if it's suitable for weather analysis.
 

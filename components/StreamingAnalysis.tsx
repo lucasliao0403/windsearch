@@ -4,6 +4,55 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ChartData } from './WeatherCharts';
 
+interface SummarySection {
+  title: string;
+  content: string;
+}
+
+function parseSummaryIntoSections(summaryText: string): SummarySection[] {
+  const sections: SummarySection[] = [];
+
+  // Split by markdown headers and clean up
+  const parts = summaryText.split(/(?=^##?\s)/m);
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+
+    // Extract title and content
+    const lines = trimmed.split('\n');
+    const firstLine = lines[0];
+
+    // Check if it starts with markdown header
+    const headerMatch = firstLine.match(/^##?\s*(.+)/);
+    if (headerMatch) {
+      const title = headerMatch[1].replace(/\*\*/g, '').trim(); // Remove bold formatting
+
+      // Skip sections that look like queries or non-summary content
+      if (title.toLowerCase().includes('weather') && title.toLowerCase().includes('summary')) {
+        continue; // Skip "palo alto weather summary" type headers
+      }
+
+      const content = lines.slice(1).join('\n').trim();
+      if (content) { // Only add sections with actual content
+        sections.push({ title, content });
+      }
+    } else {
+      // If no header, check if it's meaningful content (not just a query)
+      const content = trimmed;
+      if (content.length > 20 && !content.match(/^[\w\s]+weather\s+(summary|in|at)/i)) {
+        if (sections.length > 0) {
+          sections[sections.length - 1].content += '\n\n' + content;
+        } else {
+          sections.push({ title: 'Summary', content });
+        }
+      }
+    }
+  }
+
+  return sections;
+}
+
 
 interface Station {
   station_id: string;
@@ -229,32 +278,36 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
           </div>
 
           {summary ? (
-            <div className="prose prose-invert max-w-none">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-4">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-xl font-semibold text-white mb-3 mt-6">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-lg font-medium text-white mb-2 mt-4">{children}</h3>,
-                  p: ({ children }) => <p className="text-gray-300 mb-3 leading-relaxed">{children}</p>,
-                  ul: ({ children }) => <ul className="text-gray-300 mb-3 pl-4 space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="text-gray-300 mb-3 pl-4 space-y-1">{children}</ol>,
-                  li: ({ children }) => <li className="list-disc">{children}</li>,
-                  strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                  em: ({ children }) => <em className="text-blue-300">{children}</em>,
-                  code: ({ children }) => (
-                    <code className="bg-gray-700 px-2 py-1 rounded text-green-300 font-mono text-sm">
-                      {children}
-                    </code>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-yellow-500 pl-4 italic text-gray-400">
-                      {children}
-                    </blockquote>
-                  ),
-                }}
-              >
-                {summary}
-              </ReactMarkdown>
+            <div className="flex flex-col lg:flex-row gap-4">
+              {parseSummaryIntoSections(summary).map((section, index) => (
+                <div
+                  key={index}
+                  className="flex-1 bg-gray-900/30 rounded-xl p-4 border border-gray-600 hover:bg-gray-900/50 transition-all duration-300"
+                >
+                  <h4 className="text-lg font-semibold text-white mb-3 border-b border-gray-600 pb-2">
+                    {section.title}
+                  </h4>
+                  <div className="prose prose-invert prose-sm max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="text-gray-300 mb-2 leading-relaxed text-sm">{children}</p>,
+                        ul: ({ children }) => <ul className="text-gray-300 mb-2 pl-3 space-y-1 text-sm">{children}</ul>,
+                        ol: ({ children }) => <ol className="text-gray-300 mb-2 pl-3 space-y-1 text-sm">{children}</ol>,
+                        li: ({ children }) => <li className="list-disc text-sm">{children}</li>,
+                        strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="text-blue-300">{children}</em>,
+                        code: ({ children }) => (
+                          <code className="bg-gray-700 px-1 py-0.5 rounded text-green-300 font-mono text-xs">
+                            {children}
+                          </code>
+                        ),
+                      }}
+                    >
+                      {section.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-3">

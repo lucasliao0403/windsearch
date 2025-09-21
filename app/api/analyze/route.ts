@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No weather data available' }, { status: 404 });
     }
 
-    // Validate data freshness and quality
+    // Validate data freshness and quality based on actual data
     const dataValidation = validateDataQuality(stationData);
     if (!dataValidation.isValid) {
       return NextResponse.json({
@@ -103,13 +103,13 @@ export async function POST(request: Request) {
       }, { status: 422 });
     }
 
-    // Secondary LLM validation layer (disabled for maximum leniency)
-    // const llmValidation = await validateDataWithLLM(query, stationData);
-    // if (!llmValidation.isValid) {
-    //   return NextResponse.json({
-    //     error: `Unable to provide reliable analysis: ${llmValidation.reason}. Please try a different location or time period.`
-    //   }, { status: 422 });
-    // }
+    // Smart LLM validation that considers both query intent and actual data
+    const llmValidation = await validateQueryAndData(query, stationData);
+    if (!llmValidation.isValid) {
+      return NextResponse.json({
+        error: `${llmValidation.reason}`
+      }, { status: 422 });
+    }
 
     // Step 2: Generate analysis summary using streaming LLM
     console.log('🤖 [ANALYZE] Generating LLM analysis...');
@@ -225,6 +225,90 @@ async function* generateAnalysisStream(query: string, stationData: StationData[]
   }
 }
 
+async function validateQueryAndData(query: string, stationData: StationData[]): Promise<{ isValid: boolean; reason?: string }> {
+  console.log('🤖 [VALIDATE] Running smart query and data validation...');
+
+  // Prepare comprehensive data summary
+  const currentDate = new Date().toISOString().split('T')[0];
+  const dataAnalysis = analyzeDataTimestamps(stationData);
+
+  const dataInfo = stationData.map(station => {
+    const points = station.data;
+    if (points.length === 0) return `${station.station_name}: No data`;
+
+    const timestamps = points.map(p => p.timestamp).sort();
+    const oldest = timestamps[0];
+    const newest = timestamps[timestamps.length - 1];
+
+    return `${station.station_name}: ${points.length} points from ${oldest} to ${newest}`;
+  }).join('\n');
+
+  const prompt = PROMPTS['QUERY_DATA_VALIDATION_PROMPT']
+    ?.replace('{currentDate}', currentDate)
+    ?.replace('{query}', query)
+    ?.replace('{dataInfo}', dataInfo)
+    ?.replace('{dataAge}', Math.round(dataAnalysis.dataAgeHours).toString())
+    ?.replace('{totalPoints}', dataAnalysis.totalPoints.toString()) ||
+    `Today: ${currentDate}. Query: "${query}". Data: ${dataInfo}. Age: ${Math.round(dataAnalysis.dataAgeHours)}h old.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-latest',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    });
+
+    const content = response.content[0];
+    if (content.type === 'text') {
+      const text = content.text.trim();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const validation = JSON.parse(jsonMatch[0]);
+        console.log('✅ [VALIDATE] Smart validation result:', validation);
+        return {
+          isValid: validation.isValid,
+          reason: validation.reason
+        };
+      }
+    }
+
+    return { isValid: true }; // Default to valid if parsing fails
+  } catch (error) {
+    console.error('💥 [VALIDATE] Smart validation error:', error);
+    return { isValid: true }; // Default to valid if validation fails
+  }
+}
+
+function analyzeDataTimestamps(stationData: StationData[]): { dataAgeHours: number; totalPoints: number; timeSpanHours: number } {
+  const now = new Date();
+  let allTimestamps: Date[] = [];
+  let totalPoints = 0;
+
+  stationData.forEach(station => {
+    station.data.forEach(point => {
+      allTimestamps.push(new Date(point.timestamp));
+      totalPoints++;
+    });
+  });
+
+  if (totalPoints === 0) {
+    return { dataAgeHours: 0, totalPoints: 0, timeSpanHours: 0 };
+  }
+
+  allTimestamps.sort((a, b) => b.getTime() - a.getTime());
+  const newestData = allTimestamps[0];
+  const oldestData = allTimestamps[allTimestamps.length - 1];
+
+  const dataAgeHours = (now.getTime() - newestData.getTime()) / (1000 * 60 * 60);
+  const timeSpanHours = (newestData.getTime() - oldestData.getTime()) / (1000 * 60 * 60);
+
+  return { dataAgeHours, totalPoints, timeSpanHours };
+}
+
+// Legacy function (keeping for backwards compatibility)
 async function validateDataWithLLM(query: string, stationData: StationData[]): Promise<{ isValid: boolean; reason?: string }> {
   console.log('🤖 [VALIDATE] Running LLM data validation...');
 
