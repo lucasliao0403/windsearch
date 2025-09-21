@@ -1,10 +1,48 @@
 import type { Metadata } from "next";
-import { Merriweather } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const merriweather = Merriweather({
-  subsets: ["latin"],
-  weight: ["300", "400", "700", "900"],
+const coolvetica = localFont({
+  src: [
+    {
+      path: "./coolvetica/CoolveticaUl-Regular.woff2",
+      weight: "100",
+      style: "normal",
+    },
+    {
+      path: "./coolvetica/CoolveticaEl-Regular.woff2",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "./coolvetica/CoolveticaLt-Regular.woff2",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./coolvetica/CoolveticaRg-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./coolvetica/CoolveticaBk-Regular.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./coolvetica/CoolveticaRg-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "./coolvetica/CoolveticaHv-Regular.woff2",
+      weight: "900",
+      style: "normal",
+    }
+  ],
+  variable: "--font-coolvetica",
+  fallback: ["Arial", "Helvetica", "sans-serif"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -18,9 +56,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={coolvetica.variable}>
       <body
-        className={`${merriweather.className} antialiased`}
+        className={`${coolvetica.className} antialiased font-light`}
       >
         {children}
       </body>
