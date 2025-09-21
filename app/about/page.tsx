@@ -25,7 +25,7 @@ export default function About() {
 
       <div className="max-w-2xl mx-auto flex items-center justify-center min-h-screen">
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-          <h1 className="text-4xl font-bold text-white mb-6">About WindSearch</h1>
+          <h1 className="text-5xl text-white mb-6">About WindSearch</h1>
 
           <div className="space-y-4 text-gray-300 leading-relaxed">
             <p>
@@ -33,40 +33,20 @@ export default function About() {
             </p>
 
             <p>
-              <strong>Data Sources:</strong> The application uses the Windborne Systems API to access real-time
-              measurements from global weather stations. When you enter a location query, it geocodes the location
-              using OpenStreetMap Nominatim, then finds the nearest weather stations within a reasonable radius.
+              This application uses the Windborne Systems API to access real-time measurements from global weather stations. 
+              
+              When you enter a location query, an LLM-identified location is geocoded using OpenStreetMap, 
+              then the nearest weather stations within a reasonable radius are found for analysis. 
+              Follow-up queries maintain conversation history.
             </p>
 
             <p>
-              <strong>AI Processing:</strong> Location extraction and analysis are handled by Anthropic&apos;s Claude models.
-              Haiku performs quick location parsing and initial analysis, while Sonnet generates detailed summaries.
-              The analysis streams in real-time using server-sent events, providing immediate feedback while processing.
-            </p>
-
-            <p>
-              <strong>Technical Architecture:</strong> Built with Next.js 15 and React 19, using TypeScript for type safety.
-              The frontend uses TailwindCSS for styling and Recharts for data visualization. The backend implements
-              request queuing to prevent API rate limiting and includes data validation with fallback to historical data
-              when recent measurements aren&apos;t available.
-            </p>
-
-            <p>
-              <strong>Data Processing:</strong> The system validates data quality by checking timestamps and measurement
-              completeness. If recent data is sparse, it falls back to historical readings and adjusts the analysis
-              context accordingly. Charts display temperature, pressure, and wind patterns across multiple stations
-              to show regional weather variations.
-            </p>
-
-            <p>
-              <strong>Conversation Context:</strong> Follow-up queries maintain conversation history, allowing contextual
-              questions like &quot;What about tomorrow?&quot; or &quot;How does this compare to last week?&quot; The interface
-              dynamically adapts from a centered search to a bottom-pinned input for continuous interaction.
+              Built using Claude Sonnet and NextJS.
             </p>
 
             <div className="mt-8 pt-6 border-t border-gray-600">
               <p className="text-sm text-gray-400">
-                Made by <a href="https://lucasliao.com" className="text-blue-400 hover:text-blue-300 transition-colors">Lucas Liao</a>
+                Made by <a href="https://liaolucas.com" className="text-blue-400 hover:text-blue-300 transition-colors">Lucas Liao</a>
               </p>
             </div>
           </div>
