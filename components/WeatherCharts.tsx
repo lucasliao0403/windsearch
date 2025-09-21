@@ -99,15 +99,15 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out">
         <h3 className="text-xl font-semibold mb-4">Data Summary</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="animate-in fade-in duration-700 delay-300 hover:scale-105 transition-transform duration-300">
+          <div className="animate-in fade-in duration-700 delay-300 transition-transform duration-300">
             <div className="text-2xl font-bold text-blue-400">{data.summary.totalPoints}</div>
             <div className="text-gray-400">Total Readings</div>
           </div>
-          <div className="animate-in fade-in duration-700 delay-400 hover:scale-105 transition-transform duration-300">
+          <div className="animate-in fade-in duration-700 delay-400 transition-transform duration-300">
             <div className="text-2xl font-bold text-green-400">{data.summary.stations}</div>
             <div className="text-gray-400">Weather Stations</div>
           </div>
-          <div className="animate-in fade-in duration-700 delay-500 hover:scale-105 transition-transform duration-300">
+          <div className="animate-in fade-in duration-700 delay-500 transition-transform duration-300">
             <div className="text-2xl font-bold text-yellow-400">
               {data.summary.timeRange ?
                 `${Math.round((new Date(data.summary.timeRange.end).getTime() - new Date(data.summary.timeRange.start).getTime()) / (1000 * 60 * 60))}h` :
@@ -203,7 +203,7 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <h3 className="text-xl font-semibold mb-4">Wind Speed</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={timelineData}>
+          <LineChart data={timelineData} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
               dataKey="time"

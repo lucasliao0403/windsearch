@@ -35,6 +35,8 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
     setSummary('');
     setIsGeneratingSummary(false);
 
+    console.log('🔄 [STREAM] Starting fresh analysis, clearing previous chart data');
+
     console.log('🚀 [STREAM] Starting analysis for', stations.length, 'stations');
 
     // Note: EventSource doesn't support POST directly, using fetch instead
@@ -53,7 +55,13 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Try to get the error message from the response
+          try {
+            const errorData = await response.json();
+            throw new Error(`${response.status}: ${errorData.error || 'HTTP error'}`);
+          } catch {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
         }
 
         const reader = response.body?.getReader();
@@ -63,43 +71,74 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
 
         const decoder = new TextDecoder();
 
+        let buffer = '';
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+
+          // Process complete lines
+          const lines = buffer.split('\n');
+          // Keep the last (potentially incomplete) line in the buffer
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
-                const data = JSON.parse(line.slice(6));
+                const jsonData = line.slice(6).trim();
+                if (jsonData) {
+                  const data = JSON.parse(jsonData);
 
-                if (data.type === 'charts') {
-                  console.log('📊 [STREAM] Received chart data');
-                  onChartsReceived(data.data);
-                } else if (data.type === 'analysis') {
-                  console.log('📝 [STREAM] Received analysis chunk');
-                  setAnalysis(prev => prev + data.content);
-                } else if (data.type === 'summary') {
-                  console.log('🎯 [STREAM] Received Sonnet summary');
-                  setIsGeneratingSummary(false);
-                  setSummary(data.content);
+                  if (data.type === 'charts') {
+                    console.log('📊 [STREAM] Received chart data:', data.data);
+                    onChartsReceived(data.data);
+                  } else if (data.type === 'analysis') {
+                    console.log('📝 [STREAM] Received analysis chunk:', JSON.stringify(data.content));
+                    setAnalysis(prev => {
+                      const newAnalysis = prev + data.content;
+                      console.log('📝 [STREAM] Current analysis length:', newAnalysis.length);
+                      // Start showing summary generation after some analysis content
+                      if (newAnalysis.length > 50 && !isGeneratingSummary) {
+                        setIsGeneratingSummary(true);
+                      }
+                      return newAnalysis;
+                    });
+                  } else if (data.type === 'summary') {
+                    console.log('🎯 [STREAM] Received Sonnet summary');
+                    setIsGeneratingSummary(false);
+                    setSummary(data.content);
+                  }
                 }
               } catch (parseError) {
-                console.warn('Failed to parse SSE data:', parseError);
+                console.warn('Failed to parse SSE data:', parseError, 'Line:', line);
               }
             }
           }
         }
 
         setIsLoading(false);
-        setIsGeneratingSummary(true);
-        console.log('✅ [STREAM] Analysis completed, generating detailed summary...');
+        console.log('✅ [STREAM] Analysis completed');
       } catch (fetchError) {
         console.error('💥 [STREAM] Analysis failed:', fetchError);
-        setError('Failed to generate analysis. Please try again.');
+
+        // Extract and display the specific error message
+        if (fetchError instanceof Error) {
+          if (fetchError.message.includes('422:')) {
+            // Extract the specific error message from the API
+            const errorMessage = fetchError.message.split('422: ')[1] || 'Data validation failed';
+            setError(errorMessage);
+          } else {
+            setError('Failed to generate analysis. Please try again.');
+          }
+        } else {
+          setError('Failed to generate analysis. Please try again.');
+        }
+
         setIsLoading(false);
+        setIsGeneratingSummary(false);
       }
     }
 

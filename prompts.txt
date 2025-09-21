@@ -33,7 +33,9 @@ Weather query: "{query}"
 Station data:
 {stationData}
 
-Provide a 2-3 sentence summary of current weather conditions. Focus on temperature ranges, notable wind/pressure patterns, and regional variations. Be factual and concise - no markdown formatting.
+Provide a 2-3 sentence summary of weather conditions based on the available data. Focus on temperature ranges, notable wind/pressure patterns, and regional variations. Be factual and concise - no markdown formatting.
+
+Note: Use phrases like "recent conditions show" or "based on available data" rather than claiming "current" conditions if the data isn't from today.
 
 ## SONNET_SUMMARY_PROMPT
 Create a concise weather summary for: "{query}"
@@ -46,8 +48,46 @@ Quick Analysis:
 
 Provide a clear, public-friendly summary with:
 
-1. **Key Findings** (2-3 sentences): What's happening with the weather right now
-2. **Temperature & Conditions** (1 paragraph): Current temps, ranges, and what to expect
-3. **Notable Patterns** (1 paragraph): Any interesting weather trends or changes
+1. **Key Findings** (2-3 sentences): What the data shows about weather conditions
+2. **Temperature & Conditions** (1 paragraph): Temperature ranges and general conditions
+3. **Notable Patterns** (1 paragraph): Any interesting weather trends or variations
+
+Use appropriate language for data freshness:
+- If data is from today/yesterday: "Current conditions show..."
+- If data is from past week: "Recent conditions indicate..."
+- If data is older: "Available data from [timeframe] shows..."
 
 Keep it conversational and accessible. Use specific numbers but explain what they mean for regular people. Total length should be under 200 words.
+
+## DATA_VALIDATION_PROMPT
+You are a data quality validator for weather analysis. Today's date is 2025-09-21. Examine this weather data and determine if it's suitable for weather analysis.
+
+Data timestamps and info:
+{dataInfo}
+
+Query: "{query}"
+
+IMPORTANT:
+- Data from 2025 is current data, not future data
+- Be EXTREMELY lenient - almost always approve data unless there are critical issues
+- Historical weather data is valuable for analysis
+- Focus only on obvious data corruption, not recency
+
+Only mark as invalid if:
+1. Data is completely empty (0 data points)
+2. Timestamps are clearly corrupted (like year 1970, 1900, or 2090+)
+3. Data appears completely corrupted or nonsensical
+
+ACCEPT data that is:
+- Weeks, months, or even seasons old
+- From different time periods
+- Limited in quantity but still meaningful
+
+Default to isValid: true unless there's a critical problem.
+
+Respond with ONLY a JSON object:
+{
+  "isValid": boolean,
+  "reason": "explanation if invalid",
+  "confidence": "high/medium/low"
+}

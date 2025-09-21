@@ -95,6 +95,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No weather data available' }, { status: 404 });
     }
 
+    // Validate data freshness and quality
+    const dataValidation = validateDataQuality(stationData);
+    if (!dataValidation.isValid) {
+      return NextResponse.json({
+        error: `Unable to provide analysis: ${dataValidation.reason}. Please try a different location with more recent data.`
+      }, { status: 422 });
+    }
+
+    // Secondary LLM validation layer (disabled for maximum leniency)
+    // const llmValidation = await validateDataWithLLM(query, stationData);
+    // if (!llmValidation.isValid) {
+    //   return NextResponse.json({
+    //     error: `Unable to provide reliable analysis: ${llmValidation.reason}. Please try a different location or time period.`
+    //   }, { status: 422 });
+    // }
+
     // Step 2: Generate analysis summary using streaming LLM
     console.log('🤖 [ANALYZE] Generating LLM analysis...');
     const analysisStream = await generateAnalysisStream(query, stationData);
@@ -209,6 +225,58 @@ async function* generateAnalysisStream(query: string, stationData: StationData[]
   }
 }
 
+async function validateDataWithLLM(query: string, stationData: StationData[]): Promise<{ isValid: boolean; reason?: string }> {
+  console.log('🤖 [VALIDATE] Running LLM data validation...');
+
+  // Prepare data info for validation
+  const dataInfo = stationData.map(station => {
+    const points = station.data;
+    if (points.length === 0) return `${station.station_name}: No data`;
+
+    const timestamps = points.map(p => p.timestamp);
+    const oldest = timestamps[0];
+    const newest = timestamps[timestamps.length - 1];
+
+    return `${station.station_name}: ${points.length} points from ${oldest} to ${newest}`;
+  }).join('\n');
+
+  const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const prompt = PROMPTS['DATA_VALIDATION_PROMPT']
+    ?.replace('{dataInfo}', dataInfo)
+    ?.replace('{query}', query) ||
+    `Today's date: ${currentDate}. Validate this weather data for query "${query}": ${dataInfo}`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-latest',
+      max_tokens: 150,
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    });
+
+    const content = response.content[0];
+    if (content.type === 'text') {
+      const text = content.text.trim();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const validation = JSON.parse(jsonMatch[0]);
+        console.log('✅ [VALIDATE] LLM validation result:', validation);
+        return {
+          isValid: validation.isValid,
+          reason: validation.reason
+        };
+      }
+    }
+
+    return { isValid: true }; // Default to valid if parsing fails
+  } catch (error) {
+    console.error('💥 [VALIDATE] LLM validation error:', error);
+    return { isValid: true }; // Default to valid if validation fails
+  }
+}
+
 async function generateSonnetSummary(query: string, stationData: StationData[], haikusAnalysis: string): Promise<string> {
   console.log('🎯 [SONNET] Starting detailed summary generation');
 
@@ -288,6 +356,79 @@ interface ChartPoint extends WeatherPoint {
   station_name: string;
   wind_speed: number;
   timestamp_date: string;
+}
+
+interface DataValidationResult {
+  isValid: boolean;
+  reason?: string;
+  dataAge: number; // hours since newest data
+  totalPoints: number;
+}
+
+function validateDataQuality(stationData: StationData[]): DataValidationResult {
+  console.log('🔍 [VALIDATE] Checking data quality and freshness...');
+
+  const now = new Date();
+  const TWO_WEEKS_AGO = 14 * 24 * 60 * 60 * 1000; // 2 weeks in milliseconds
+  const ONE_WEEK_AGO = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+
+  let allTimestamps: Date[] = [];
+  let totalPoints = 0;
+
+  // Collect all timestamps from all stations
+  stationData.forEach(station => {
+    station.data.forEach(point => {
+      allTimestamps.push(new Date(point.timestamp));
+      totalPoints++;
+    });
+  });
+
+  if (totalPoints === 0) {
+    return { isValid: false, reason: "No data points available", dataAge: 0, totalPoints: 0 };
+  }
+
+  // Sort timestamps to find newest and oldest
+  allTimestamps.sort((a, b) => b.getTime() - a.getTime());
+  const newestData = allTimestamps[0];
+  const oldestData = allTimestamps[allTimestamps.length - 1];
+
+  const dataAge = (now.getTime() - newestData.getTime()) / (1000 * 60 * 60); // hours
+  const dataSpan = newestData.getTime() - oldestData.getTime(); // milliseconds
+
+  console.log('📊 [VALIDATE] Data summary:', {
+    totalPoints,
+    newestData: newestData.toISOString(),
+    dataAgeHours: Math.round(dataAge),
+    dataSpanDays: Math.round(dataSpan / (1000 * 60 * 60 * 24))
+  });
+
+  // Check if newest data is extremely old (more than 3 months - very lenient)
+  if (dataAge > 90 * 24) {
+    return {
+      isValid: false,
+      reason: `Data is ${Math.round(dataAge / 24)} days old. Data this old may not be reliable`,
+      dataAge,
+      totalPoints
+    };
+  }
+
+  // Check if we have any meaningful data at all (very minimal requirement)
+  if (totalPoints < 3) {
+    return {
+      isValid: false,
+      reason: `Insufficient data points (only ${totalPoints} total)`,
+      dataAge,
+      totalPoints
+    };
+  }
+
+  // Warn if data is getting stale (5+ days old)
+  if (dataAge > 5 * 24) {
+    console.log('⚠️ [VALIDATE] Data is getting stale but still usable');
+  }
+
+  console.log('✅ [VALIDATE] Data quality acceptable');
+  return { isValid: true, dataAge, totalPoints };
 }
 
 function prepareChartData(stationData: StationData[]) {
