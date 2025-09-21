@@ -48,17 +48,18 @@ export async function POST(request: Request) {
   console.log('🔍 [SEARCH] Starting search request');
 
   try {
-    const { query } = await request.json();
+    const { query, conversationContext } = await request.json();
     console.log('📥 [SEARCH] Raw query received:', query);
+    console.log('💬 [SEARCH] Conversation context:', conversationContext);
 
     if (!query) {
       console.log('❌ [SEARCH] No query provided');
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    // Step 1: Extract location and station count from user query
+    // Step 1: Extract location from user query (considering conversation context)
     console.log('🤖 [SEARCH] Extracting location from query with LLM...');
-    const locationRequest = await extractLocationFromQuery(query);
+    const locationRequest = await extractLocationFromQuery(query, conversationContext);
     console.log('📍 [SEARCH] Location extraction result:', locationRequest);
 
     if (!locationRequest.location) {
@@ -179,11 +180,28 @@ function findNearestStations(lat: number, lng: number, stations: Station[], coun
   return nearest;
 }
 
-async function extractLocationFromQuery(query: string): Promise<LocationRequest> {
+async function extractLocationFromQuery(query: string, conversationContext?: any[]): Promise<LocationRequest> {
   console.log('🤖 [LLM] Starting location extraction from query:', query);
+  console.log('💬 [LLM] Using conversation context:', conversationContext?.length || 0, 'previous entries');
 
-  const prompt = PROMPTS['LOCATION_EXTRACTION_PROMPT']?.replace('{query}', query) ||
+  let prompt = PROMPTS['LOCATION_EXTRACTION_PROMPT']?.replace('{query}', query) ||
     `Extract location from: "${query}". Return JSON: {"location": "place name"}`;
+
+  // Add conversation context for follow-up queries
+  if (conversationContext && conversationContext.length > 0) {
+    const contextInfo = conversationContext.map((entry, i) =>
+      `${i + 1}. Query: "${entry.query}" → Location: "${entry.location}"`
+    ).join('\n');
+
+    prompt = `Previous conversation context:
+${contextInfo}
+
+Current query: "${query}"
+
+Extract the location for the current query. For follow-up questions like "what about tomorrow?" or "how about there?", use the most recent location from context. For new location queries, extract the new location.
+
+Return ONLY a JSON object: {"location": "specific location name"}`;
+  }
 
   console.log('📤 [LLM] Sending request to Claude...');
 

@@ -18,7 +18,7 @@ export default function SearchInterface({
   showResults
 }: SearchInterfaceProps) {
   return (
-    <div className={`transition-all duration-700 ease-out animate-in slide-in-from-bottom-4 duration-1000 delay-500`}>
+    <div className={`transition-all duration-700 ease-out ${!showResults ? 'animate-in slide-in-from-bottom-4 duration-1000 delay-500' : ''}`}>
       <form onSubmit={onSubmit} className="relative">
         <div className={`relative transition-all duration-500 ease-out rounded-2xl ${
           isSearchFocused ? 'ring-2 ring-white/50' : ''
@@ -29,8 +29,8 @@ export default function SearchInterface({
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder="What's the weather like in San Francisco?"
-            className="w-full p-4 pl-6 pr-16 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl text-white placeholder-gray-400 text-lg focus:outline-none focus:border-blue-500 focus:bg-gray-800/70 transition-all duration-300 ease-out"
+            placeholder={showResults ? "Ask a follow-up question..." : "Ask about weather..."}
+            className={`w-full p-4 pl-6 pr-16 bg-gray-800/85 backdrop-blur-sm border border-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-gray-800/70 transition-all duration-300 ease-out ${showResults ? 'text-base' : 'text-lg'}`}
           />
           <button
             type="submit"
@@ -53,19 +53,46 @@ export default function SearchInterface({
         <div className="mt-6 text-center animate-in fade-in duration-700 delay-700">
           <div className="flex flex-wrap justify-center gap-2">
             <button
-              onClick={() => setQuery("What's the weather in Palo Alto?")}
+              onClick={() => {
+                setQuery("What's the weather in Palo Alto?");
+                // Trigger search automatically
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }, 100);
+              }}
               className="px-3 py-1.5 text-sm bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700 rounded-lg transition-all duration-200 hover:border-gray-600 cursor-pointer"
             >
               What's the weather in Palo Alto?
             </button>
             <button
-              onClick={() => setQuery("Will it rain tomorrow in Waterloo, Ontario?")}
+              onClick={() => {
+                setQuery("Will it rain tomorrow in Waterloo, Ontario?");
+                // Trigger search automatically
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }, 100);
+              }}
               className="px-3 py-1.5 text-sm bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700 rounded-lg transition-all duration-200 hover:border-gray-600 cursor-pointer"
             >
               Will it rain tomorrow in Waterloo, Ontario?
             </button>
             <button
-              onClick={() => setQuery("Current temperature in Tokyo")}
+              onClick={() => {
+                setQuery("Current temperature in Tokyo");
+                // Trigger search automatically
+                setTimeout(() => {
+                  const form = document.querySelector('form');
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }, 100);
+              }}
               className="px-3 py-1.5 text-sm bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700 rounded-lg transition-all duration-200 hover:border-gray-600 cursor-pointer"
             >
               Current temperature in Tokyo

@@ -7,6 +7,52 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Simple request queue to prevent rate limiting
+class RequestQueue {
+  private queue: Array<() => Promise<any>> = [];
+  private isProcessing = false;
+  private lastRequestTime = 0;
+  private minInterval = 1000; // 1 second between requests
+
+  async add<T>(requestFn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await requestFn();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      this.process();
+    });
+  }
+
+  private async process() {
+    if (this.isProcessing || this.queue.length === 0) return;
+
+    this.isProcessing = true;
+
+    while (this.queue.length > 0) {
+      const request = this.queue.shift()!;
+
+      // Ensure minimum interval between requests
+      const now = Date.now();
+      const timeSinceLastRequest = now - this.lastRequestTime;
+      if (timeSinceLastRequest < this.minInterval) {
+        await new Promise(resolve => setTimeout(resolve, this.minInterval - timeSinceLastRequest));
+      }
+
+      this.lastRequestTime = Date.now();
+      await request();
+    }
+
+    this.isProcessing = false;
+  }
+}
+
+const claudeQueue = new RequestQueue();
+
 const WINDBORNE_API_BASE = "https://sfc.windbornesystems.com";
 
 // Load prompts from file
@@ -122,6 +168,40 @@ export async function POST(request: Request) {
     return new Response(
       new ReadableStream({
         start(controller) {
+          let isClosed = false;
+
+          // Function to safely write to controller with graceful disconnection handling
+          const safeEnqueue = (data: string, context: string = '') => {
+            if (isClosed) {
+              console.log(`🔌 [ANALYZE] Client disconnected, skipping ${context}`);
+              return false;
+            }
+
+            try {
+              controller.enqueue(data);
+              return true;
+            } catch (error: any) {
+              if (error.message?.includes('Controller is already closed')) {
+                console.log(`🔌 [ANALYZE] Client disconnected during ${context}`);
+                isClosed = true;
+                return false;
+              } else {
+                console.error(`💥 [ANALYZE] Unexpected controller error during ${context}:`, error);
+                isClosed = true;
+                return false;
+              }
+            }
+          };
+
+          // Override the close method to track state
+          const originalClose = controller.close.bind(controller);
+          controller.close = () => {
+            if (!isClosed) {
+              isClosed = true;
+              originalClose();
+            }
+          };
+
           (async () => {
             try {
               // Send chart data first
@@ -129,7 +209,9 @@ export async function POST(request: Request) {
                 type: 'charts',
                 data: chartData
               };
-              controller.enqueue(`data: ${JSON.stringify(chartMessage)}\n\n`);
+              if (!safeEnqueue(`data: ${JSON.stringify(chartMessage)}\n\n`, 'chart data')) {
+                return; // Client disconnected
+              }
 
               // Stream the quick Haiku analysis first
               let haikusAnalysis = '';
@@ -139,7 +221,9 @@ export async function POST(request: Request) {
                   type: 'analysis',
                   content: chunk
                 };
-                controller.enqueue(`data: ${JSON.stringify(analysisMessage)}\n\n`);
+                if (!safeEnqueue(`data: ${JSON.stringify(analysisMessage)}\n\n`, 'analysis chunk')) {
+                  break; // Client disconnected, stop streaming
+                }
               }
 
               // Generate detailed Sonnet summary after Haiku analysis completes
@@ -150,12 +234,21 @@ export async function POST(request: Request) {
                 type: 'summary',
                 content: sonnetSummary
               };
-              controller.enqueue(`data: ${JSON.stringify(summaryMessage)}\n\n`);
 
-              controller.close();
+              // Send summary and close stream
+              if (safeEnqueue(`data: ${JSON.stringify(summaryMessage)}\n\n`, 'summary')) {
+                controller.close();
+              }
+              // If client disconnected, controller is already closed
             } catch (error) {
               console.error('💥 [ANALYZE] Streaming error:', error);
-              controller.error(error);
+              if (!isClosed) {
+                try {
+                  controller.error(error);
+                } catch (controllerError) {
+                  console.log('🔌 [ANALYZE] Client disconnected during error handling');
+                }
+              }
             }
           })();
         }
@@ -202,7 +295,7 @@ async function* generateAnalysisStream(query: string, stationData: StationData[]
   console.log('📤 [LLM] Sending streaming request to Claude...');
 
   try {
-    const stream = await anthropic.messages.create({
+    const stream = await claudeQueue.add(() => anthropic.messages.create({
       model: 'claude-3-5-haiku-latest',
       max_tokens: 150,
       messages: [{
@@ -210,7 +303,7 @@ async function* generateAnalysisStream(query: string, stationData: StationData[]
         content: prompt
       }],
       stream: true
-    });
+    }));
 
     for await (const chunk of stream) {
       if (chunk.type === 'content_block_delta' && 'text' in chunk.delta) {
@@ -252,14 +345,14 @@ async function validateQueryAndData(query: string, stationData: StationData[]): 
     `Today: ${currentDate}. Query: "${query}". Data: ${dataInfo}. Age: ${Math.round(dataAnalysis.dataAgeHours)}h old.`;
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await claudeQueue.add(() => anthropic.messages.create({
       model: 'claude-3-5-haiku-latest',
       max_tokens: 200,
       messages: [{
         role: 'user',
         content: prompt
       }]
-    });
+    }));
 
     const content = response.content[0];
     if (content.type === 'text') {
@@ -412,14 +505,14 @@ async function generateSonnetSummary(query: string, stationData: StationData[], 
   console.log('📤 [SONNET] Sending detailed analysis request to Claude Sonnet...');
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await claudeQueue.add(() => anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [{
         role: 'user',
         content: prompt
       }]
-    });
+    }));
 
     const content = response.content[0];
     if (content.type === 'text') {
@@ -486,28 +579,28 @@ function validateDataQuality(stationData: StationData[]): DataValidationResult {
     dataSpanDays: Math.round(dataSpan / (1000 * 60 * 60 * 24))
   });
 
-  // Check if newest data is extremely old (more than 3 months - very lenient)
-  if (dataAge > 90 * 24) {
+  // Only reject if data is extremely old (more than 1 year - extremely lenient)
+  if (dataAge > 365 * 24) {
     return {
       isValid: false,
-      reason: `Data is ${Math.round(dataAge / 24)} days old. Data this old may not be reliable`,
+      reason: `Data is over a year old (${Math.round(dataAge / 24)} days). Please try a different location`,
       dataAge,
       totalPoints
     };
   }
 
-  // Check if we have any meaningful data at all (very minimal requirement)
-  if (totalPoints < 3) {
+  // Check if we have any data at all (very minimal requirement)
+  if (totalPoints < 1) {
     return {
       isValid: false,
-      reason: `Insufficient data points (only ${totalPoints} total)`,
+      reason: `No data points available`,
       dataAge,
       totalPoints
     };
   }
 
-  // Warn if data is getting stale (5+ days old)
-  if (dataAge > 5 * 24) {
+  // Warn if data is getting quite old (30+ days old)
+  if (dataAge > 30 * 24) {
     console.log('⚠️ [VALIDATE] Data is getting stale but still usable');
   }
 

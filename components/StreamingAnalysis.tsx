@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ChartData } from './WeatherCharts';
 
@@ -66,9 +66,10 @@ interface StreamingAnalysisProps {
   query: string;
   stations: Station[];
   onChartsReceived: (chartData: ChartData) => void;
+  isActive?: boolean; // Only the active/latest entry should stream
 }
 
-export default function StreamingAnalysis({ query, stations, onChartsReceived }: StreamingAnalysisProps) {
+export default function StreamingAnalysis({ query, stations, onChartsReceived, isActive = true }: StreamingAnalysisProps) {
   const [analysis, setAnalysis] = useState('');
   const [summary, setSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +77,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (stations.length === 0) return;
+    if (stations.length === 0 || !isActive) return;
 
     setIsLoading(true);
     setError(null);
@@ -104,7 +105,23 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
         });
 
         if (!response.ok) {
-          // Try to get the error message from the response
+          // For 422 errors (data validation failed), show user-friendly error and don't retry
+          if (response.status === 422) {
+            try {
+              const errorData = await response.json();
+              setError(errorData.error || 'Unable to provide analysis with current data availability.');
+              setIsLoading(false);
+              setIsGeneratingSummary(false);
+              return; // Don't throw - just show error message
+            } catch {
+              setError('Unable to provide analysis with current data availability.');
+              setIsLoading(false);
+              setIsGeneratingSummary(false);
+              return;
+            }
+          }
+
+          // For other errors, throw to trigger error handling
           try {
             const errorData = await response.json();
             throw new Error(`${response.status}: ${errorData.error || 'HTTP error'}`);
@@ -191,10 +208,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
       }
     }
 
-    return () => {
-      // Cleanup if needed
-    };
-  }, [query, stations, onChartsReceived]);
+  }, [query, stations, isActive]);
 
   if (error) {
     return (
@@ -278,11 +292,11 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived }:
           </div>
 
           {summary ? (
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col gap-4">
               {parseSummaryIntoSections(summary).map((section, index) => (
                 <div
                   key={index}
-                  className="flex-1 bg-gray-900/30 rounded-xl p-4 border border-gray-600 hover:bg-gray-900/50 transition-all duration-300"
+                  className="bg-gray-900/30 rounded-xl p-4 border border-gray-600 hover:bg-gray-900/50 transition-all duration-300"
                 >
                   <h4 className="text-lg font-semibold text-white mb-3 border-b border-gray-600 pb-2">
                     {section.title}

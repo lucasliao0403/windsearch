@@ -27,55 +27,80 @@ interface SearchResult {
   selectedStations: SelectedStation[];
 }
 
+interface ConversationEntry {
+  id: string;
+  query: string;
+  searchResult: SearchResult | null;
+  chartData: ChartData | null;
+  timestamp: Date;
+}
+
 export default function Home() {
   const [query, setQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [showResults, setShowResults] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [conversation, setConversation] = useState<ConversationEntry[]>([]);
+  const [currentChartData, setCurrentChartData] = useState<ChartData | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
     setLoading(true);
+    const entryId = Date.now().toString();
+
     try {
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({
+          query,
+          conversationContext: conversation.map(entry => ({
+            query: entry.query,
+            location: entry.searchResult?.extractedLocation,
+            timestamp: entry.timestamp
+          }))
+        })
       });
       const data = await response.json();
 
       console.log('API Response:', data);
 
       if (response.ok) {
-        setSearchResult(data);
-        setShowResults(true);
-        setShowAnalysis(true); // Auto-start analysis immediately
-        setChartData(null); // Reset chart data for new search
+        const newEntry: ConversationEntry = {
+          id: entryId,
+          query,
+          searchResult: data,
+          chartData: null,
+          timestamp: new Date()
+        };
+
+        setConversation(prev => [...prev, newEntry]);
+        setCurrentChartData(null); // Reset chart data for new search
+        setQuery(''); // Clear input after search
       } else {
         console.error('API Error:', data);
-        setSearchResult(null);
-        setShowResults(false);
-        setShowAnalysis(false);
       }
     } catch (error) {
       console.error('Search error:', error);
-      setSearchResult(null);
-      setShowResults(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChartsReceived = useCallback((data: ChartData) => {
+  const handleChartsReceived = useCallback((data: ChartData, entryId?: string) => {
     console.log('📊 [PAGE] Received chart data in main component:', data);
-    console.log('📊 [PAGE] Setting chartData state...');
-    setChartData(data);
+    setCurrentChartData(data);
+
+    if (entryId) {
+      setConversation(prev => prev.map(entry =>
+        entry.id === entryId ? { ...entry, chartData: data } : entry
+      ));
+    }
   }, []);
+
+  const latestEntry = conversation[conversation.length - 1] || null;
+  const hasConversation = conversation.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
@@ -84,12 +109,6 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">W</span>
-                </div>
-                <span className="text-xl font-semibold">WindSearch</span>
-              </div>
               <a href="/about" className="text-gray-300 hover:text-white transition-colors duration-200">
                 About
               </a>
@@ -110,34 +129,68 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 min-h-[calc(100vh-120px)] flex flex-col">
-        {/* Centered Content Area */}
-        <div className={`flex-1 flex flex-col ${!showResults ? 'justify-center' : 'justify-start pt-8'}`}>
-          <Hero showResults={showResults} />
+        {!hasConversation ? (
+          /* Initial state - centered search */
+          <div className="flex-1 flex flex-col justify-center">
+            <Hero showResults={false} />
+            <SearchInterface
+              query={query}
+              setQuery={setQuery}
+              onSubmit={handleSearch}
+              loading={loading}
+              isSearchFocused={isSearchFocused}
+              setIsSearchFocused={setIsSearchFocused}
+              showResults={false}
+            />
+          </div>
+        ) : (
+          /* Conversation state - content at top, search at bottom */
+          <>
+            <div className="flex-1 pt-8 pb-32">
+              {conversation.map((entry, index) => (
+                <div key={entry.id} className="mb-12">
+                  {/* Query */}
+                  <div className="mb-6">
+                    <div className="text-xl font-medium text-white bg-gray-800/30 rounded-xl p-4 border border-gray-700">
+                      {entry.query}
+                    </div>
+                  </div>
 
-          <SearchInterface
-            query={query}
-            setQuery={setQuery}
-            onSubmit={handleSearch}
-            loading={loading}
-            isSearchFocused={isSearchFocused}
-            setIsSearchFocused={setIsSearchFocused}
-            showResults={showResults}
-          />
+                  {/* Results for this query */}
+                  <SearchResults
+                    searchResult={entry.searchResult}
+                    showResults={true}
+                  />
 
-          <SearchResults
-            searchResult={searchResult}
-            showResults={showResults}
-          />
+                  <AnalysisAndCharts
+                    showAnalysis={true}
+                    searchResult={entry.searchResult}
+                    chartData={index === conversation.length - 1 ? currentChartData : entry.chartData}
+                    onChartsReceived={(data) => handleChartsReceived(data, entry.id)}
+                    isActive={index === conversation.length - 1}
+                  />
+                </div>
+              ))}
+            </div>
 
-          <AnalysisAndCharts
-            showAnalysis={showAnalysis}
-            searchResult={searchResult}
-            chartData={chartData}
-            onChartsReceived={handleChartsReceived}
-          />
-        </div>
+            {/* Fixed bottom search bar */}
+            <div className="fixed bottom-8 left-0 right-0 p-4">
+              <div className="max-w-4xl mx-auto">
+                <SearchInterface
+                  query={query}
+                  setQuery={setQuery}
+                  onSubmit={handleSearch}
+                  loading={loading}
+                  isSearchFocused={isSearchFocused}
+                  setIsSearchFocused={setIsSearchFocused}
+                  showResults={true}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
-        <Footer />
+        {!hasConversation && <Footer />}
       </div>
     </div>
   );

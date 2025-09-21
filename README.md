@@ -1,24 +1,26 @@
 # WindSearch
 
-A natural language weather search engine that fetches real-time data from global weather stations and provides AI-powered analysis.
+Ask about weather in plain English. Get real data from actual weather stations.
 
 ## What it does
 
-- **Natural language queries**: Ask about weather in plain English ("What's the weather like in San Francisco?")
-- **Smart location extraction**: Uses Claude AI to parse locations from user queries
-- **Nearest station discovery**: Finds the closest weather stations within 200km of the target location
-- **Real-time data**: Fetches current weather data from the Windborne API
-- **AI analysis**: Provides streaming weather insights using Claude Haiku and detailed summaries with Claude Sonnet
-- **Interactive charts**: Visualizes temperature, pressure, and wind data with Recharts
+Ask "weather in San Francisco" and it finds nearby weather stations, pulls their latest readings, and explains what's happening. Shows real measurements, not forecasts.
+
+- Natural language weather queries with conversational follow-ups
+- Real-time data from global weather stations
+- AI analysis that explains the data clearly
+- Interactive charts showing trends across stations
+- Smart context awareness for follow-up questions
+- Perplexity-style interface that moves search to bottom after first query
 
 ## How it works
 
-1. **Query Processing**: Claude extracts location from natural language input
-2. **Geocoding**: OpenStreetMap Nominatim API converts location to coordinates
-3. **Station Selection**: Finds nearest weather stations and uses AI to filter most relevant ones
-4. **Data Fetching**: Retrieves real-time weather data from Windborne Systems API
-5. **Analysis**: Streams quick insights with Claude Haiku, then generates detailed analysis with Claude Sonnet
-6. **Visualization**: Charts display weather trends across all selected stations
+1. Extract location from your query using Claude AI (with conversation context)
+2. Find coordinates and nearest weather stations
+3. Pull real-time data from Windborne Systems API
+4. Stream quick analysis, then generate detailed summary
+5. Display charts showing trends across stations
+6. Maintain conversation history for intelligent follow-up questions
 
 ## Tech Stack
 

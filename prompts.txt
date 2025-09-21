@@ -70,26 +70,28 @@ Total Points: {totalPoints}
 
 Your job: Determine if this data can reasonably answer the user's query.
 
-GUIDELINES:
-1. **Future Predictions**: Allow reasonable short-term forecasting (1-3 days) based on recent trends
-2. **Historical Analysis**: Accept any historical data for past weather questions
-3. **Current Conditions**: Recent data (hours to weeks old) is fine for "current" weather
-4. **Seasonal Queries**: Allow seasonal/monthly analysis even with older data
-5. **Trend Analysis**: Any data span can show trends and patterns
+GUIDELINES - BE EXTREMELY LENIENT:
+1. **Future Predictions**: Allow all short-term forecasting (up to 1-2 weeks) based on any recent trends
+2. **Historical Analysis**: Accept ALL historical data for any past weather questions
+3. **Current Conditions**: Data up to several months old is acceptable for "current" weather patterns
+4. **Seasonal Queries**: Allow seasonal/monthly analysis with any available data
+5. **Trend Analysis**: ANY data span can show meaningful trends and patterns
+6. **General Weather**: Most weather queries can be answered with available historical context
 
-ACCEPT queries like:
-- "Weather tomorrow" (can extrapolate from recent trends)
-- "Will it rain next week" (reasonable short-term prediction)
-- "Weather in January" (historical analysis)
-- "Current conditions" (recent data is sufficient)
+ACCEPT almost everything including:
+- "Weather tomorrow" (any recent data works for trends)
+- "Will it rain next week" (historical patterns provide insights)
+- "Weather in January" (any historical data works)
+- "Current conditions" (data weeks or months old still provides context)
 - "Temperature trends" (any data period works)
+- "What's the weather like" (general questions work with any data)
 
-REJECT only if:
-- No data at all (0 points)
-- Data is completely corrupted
-- Query asks for very specific future details beyond reasonable forecasting (like "exact temperature next month")
+REJECT ONLY if:
+- Absolutely no data (0 points total)
+- Data is completely corrupted/unreadable
+- Query is completely unrelated to weather
 
-Default to isValid: true - be very permissive.
+DEFAULT: Always return isValid: true unless there's a critical blocker.
 
 Respond with ONLY a JSON object:
 {

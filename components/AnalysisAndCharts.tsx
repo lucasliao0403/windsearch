@@ -25,13 +25,15 @@ interface AnalysisAndChartsProps {
   searchResult: SearchResult | null;
   chartData: ChartData | null;
   onChartsReceived: (data: ChartData) => void;
+  isActive?: boolean;
 }
 
 export default function AnalysisAndCharts({
   showAnalysis,
   searchResult,
   chartData,
-  onChartsReceived
+  onChartsReceived,
+  isActive = true
 }: AnalysisAndChartsProps) {
   if (!showAnalysis || !searchResult?.selectedStations || searchResult.selectedStations.length === 0) {
     return null;
@@ -44,6 +46,7 @@ export default function AnalysisAndCharts({
         query={searchResult.query}
         stations={searchResult.selectedStations}
         onChartsReceived={onChartsReceived}
+        isActive={isActive}
       />
 
       {/* Charts */}

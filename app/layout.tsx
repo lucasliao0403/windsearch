@@ -46,8 +46,8 @@ const coolvetica = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "WindSearch - AI Weather Analysis",
-  description: "Intelligent weather insights from global station data",
+  title: "WindSearch",
+  description: "Ask about weather in plain English. Get real data from global weather stations.",
 };
 
 export default function RootLayout({
