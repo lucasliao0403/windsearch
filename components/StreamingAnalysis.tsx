@@ -187,12 +187,20 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
       <div className="bg-red-900/20 border border-red-500 rounded-2xl p-6">
         <h3 className="text-xl font-semibold text-red-400 mb-2">Analysis Error</h3>
         <p className="text-red-300">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl"
-        >
-          Retry
-        </button>
+        <div className="flex items-center gap-4 mt-4">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl"
+          >
+            Retry
+          </button>
+          <a
+            href="/about"
+            className="text-sm text-gray-400 hover:text-gray-300 underline"
+          >
+            Not working? See our video demo instead.
+          </a>
+        </div>
       </div>
     );
   }

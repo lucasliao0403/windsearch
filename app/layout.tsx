@@ -50,6 +50,9 @@ const coolvetica = localFont({
 export const metadata: Metadata = {
   title: "WindSearch",
   description: "Ask about weather in plain English. Get real data from global weather stations.",
+  icons: {
+    icon: "/windborne-logo.png",
+  },
 };
 
 export default function RootLayout({

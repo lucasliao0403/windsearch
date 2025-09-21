@@ -1,7 +1,7 @@
 export default function Footer() {
   return (
     <div className="text-center pt-8 mt-16">
-      <div className="text-sm text-gray-500 mb-4">Made by Lucas Liao</div>
+      <div className="text-sm text-gray-500 mb-4 select-none">Made by Lucas Liao</div>
       <div className="flex justify-center gap-6">
         <a
           href="https://x.com/liao_lucas"
