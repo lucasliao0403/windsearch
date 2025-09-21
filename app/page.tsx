@@ -112,6 +112,12 @@ export default function Home() {
 
   const hasConversation = conversation.length > 0;
 
+  const handleBackToSearch = () => {
+    setConversation([]);
+    setCurrentChartData(null);
+    setQuery('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
       {/* Header */}
@@ -156,7 +162,26 @@ export default function Home() {
         ) : (
           /* Conversation state - content at top, search at bottom */
           <>
-            <div className="flex-1 pt-8 pb-32">
+            {/* Back to Search Button */}
+            <div className="">
+              <button
+                onClick={handleBackToSearch}
+                className="flex items-center gap-2
+                rounded-xl text-gray-300 hover:text-white transition-all duration-300 cursor-pointer"
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                New Search
+              </button>
+            </div>
+
+            <div className="flex-1 pt-4 pb-32">
               {conversation.map((entry, index) => (
                 <div key={entry.id} className="mb-12">
                   {/* Query */}
