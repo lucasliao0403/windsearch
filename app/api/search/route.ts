@@ -180,7 +180,7 @@ function findNearestStations(lat: number, lng: number, stations: Station[], coun
   return nearest;
 }
 
-async function extractLocationFromQuery(query: string, conversationContext?: any[]): Promise<LocationRequest> {
+async function extractLocationFromQuery(query: string, conversationContext?: unknown[]): Promise<LocationRequest> {
   console.log('🤖 [LLM] Starting location extraction from query:', query);
   console.log('💬 [LLM] Using conversation context:', conversationContext?.length || 0, 'previous entries');
 
@@ -189,9 +189,10 @@ async function extractLocationFromQuery(query: string, conversationContext?: any
 
   // Add conversation context for follow-up queries
   if (conversationContext && conversationContext.length > 0) {
-    const contextInfo = conversationContext.map((entry, i) =>
-      `${i + 1}. Query: "${entry.query}" → Location: "${entry.location}"`
-    ).join('\n');
+    const contextInfo = conversationContext.map((entry, i) => {
+      const typedEntry = entry as { query?: string; location?: string };
+      return `${i + 1}. Query: "${typedEntry.query || 'unknown'}" → Location: "${typedEntry.location || 'unknown'}"`;
+    }).join('\n');
 
     prompt = `Previous conversation context:
 ${contextInfo}

@@ -34,11 +34,11 @@ export default function About() {
 
             <p>
               Instead of guessing or using forecasts, it finds the nearest weather stations to your location,
-              pulls their latest readings, and shows you what's actually happening.
+              pulls their latest readings, and shows you what&apos;s actually happening.
             </p>
 
             <p>
-              Ask follow-up questions naturally. "What about tomorrow?" or "How about Tokyo?" and it remembers
+              Ask follow-up questions naturally. &quot;What about tomorrow?&quot; or &quot;How about Tokyo?&quot; and it remembers
               the conversation context. The interface adapts like Perplexity - search starts centered, then
               moves to the bottom for continuous conversation.
             </p>
@@ -50,7 +50,7 @@ export default function About() {
             </p>
 
             <p>
-              Works with both recent and historical data. If recent measurements aren't available, it analyzes
+              Works with both recent and historical data. If recent measurements aren&apos;t available, it analyzes
               older data and explains the context. Performance optimized to handle multiple conversations and
               large datasets smoothly. Built because most weather apps show forecasts or generic conditions -
               this shows real measurements with intelligent analysis.

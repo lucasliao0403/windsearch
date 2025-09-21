@@ -80,7 +80,7 @@ export default function SearchInterface({
               }}
               className="px-3 py-1.5 text-sm bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700 rounded-lg transition-all duration-200 hover:border-gray-600 cursor-pointer"
             >
-              What's the weather in Palo Alto?
+              What&apos;s the weather in Palo Alto?
             </button>
             <button
               onClick={() => {

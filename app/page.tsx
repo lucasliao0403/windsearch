@@ -110,7 +110,6 @@ export default function Home() {
     }
   }, []);
 
-  const latestEntry = conversation[conversation.length - 1] || null;
   const hasConversation = conversation.length > 0;
 
   return (

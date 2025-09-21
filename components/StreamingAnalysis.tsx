@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ChartData } from './WeatherCharts';
 
@@ -165,7 +165,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
       }
     }
 
-  }, [query, stations, isActive, isFollowUp]);
+  }, [query, stations, isActive, isFollowUp, onChartsReceived]);
 
   if (error) {
     return (

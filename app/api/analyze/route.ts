@@ -9,7 +9,7 @@ const anthropic = new Anthropic({
 
 // Simple request queue to prevent rate limiting
 class RequestQueue {
-  private queue: Array<() => Promise<any>> = [];
+  private queue: Array<() => Promise<unknown>> = [];
   private isProcessing = false;
   private lastRequestTime = 0;
   private minInterval = 1000; // 1 second between requests
@@ -180,8 +180,8 @@ export async function POST(request: Request) {
             try {
               controller.enqueue(data);
               return true;
-            } catch (error: any) {
-              if (error.message?.includes('Controller is already closed')) {
+            } catch (error: unknown) {
+              if (error instanceof Error && error.message?.includes('Controller is already closed')) {
                 console.log(`🔌 [ANALYZE] Client disconnected during ${context}`);
                 isClosed = true;
                 return false;
@@ -245,7 +245,7 @@ export async function POST(request: Request) {
               if (!isClosed) {
                 try {
                   controller.error(error);
-                } catch (controllerError) {
+                } catch {
                   console.log('🔌 [ANALYZE] Client disconnected during error handling');
                 }
               }
@@ -377,7 +377,7 @@ async function validateQueryAndData(query: string, stationData: StationData[]): 
 
 function analyzeDataTimestamps(stationData: StationData[]): { dataAgeHours: number; totalPoints: number; timeSpanHours: number } {
   const now = new Date();
-  let allTimestamps: Date[] = [];
+  const allTimestamps: Date[] = [];
   let totalPoints = 0;
 
   stationData.forEach(station => {
@@ -402,6 +402,7 @@ function analyzeDataTimestamps(stationData: StationData[]): { dataAgeHours: numb
 }
 
 // Legacy function (keeping for backwards compatibility)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function validateDataWithLLM(query: string, stationData: StationData[]): Promise<{ isValid: boolean; reason?: string }> {
   console.log('🤖 [VALIDATE] Running LLM data validation...');
 
@@ -546,10 +547,10 @@ function validateDataQuality(stationData: StationData[]): DataValidationResult {
   console.log('🔍 [VALIDATE] Checking data quality and freshness...');
 
   const now = new Date();
-  const TWO_WEEKS_AGO = 14 * 24 * 60 * 60 * 1000; // 2 weeks in milliseconds
-  const ONE_WEEK_AGO = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+  // const TWO_WEEKS_AGO = 14 * 24 * 60 * 60 * 1000; // 2 weeks in milliseconds
+  // const ONE_WEEK_AGO = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
 
-  let allTimestamps: Date[] = [];
+  const allTimestamps: Date[] = [];
   let totalPoints = 0;
 
   // Collect all timestamps from all stations
