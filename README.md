@@ -4,7 +4,7 @@ Ask about weather in plain English. Get real data from actual weather stations.
 
 ## [🌤️ TRY HERE](https://windsearch-gm6x.vercel.app/)
 
-![WindSearch Demo](windsearch.gif)
+![WindSearch Demo](https://github.com/lucasliao0403/windsearch/blob/main/public/windsearch.gif)
 
 
 ## What it does
