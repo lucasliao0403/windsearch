@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
       {/* Back button */}
       <div className="fixed top-6 left-6 z-10">
         <Link
@@ -29,31 +29,39 @@ export default function About() {
 
           <div className="space-y-4 text-gray-300 leading-relaxed">
             <p>
-              WindSearch lets you ask about weather in plain English and get real data from actual weather stations.
+              WindSearch queries real weather station data and provides AI-powered analysis of current conditions.
             </p>
 
             <p>
-              Instead of guessing or using forecasts, it finds the nearest weather stations to your location,
-              pulls their latest readings, and shows you what&apos;s actually happening.
+              <strong>Data Sources:</strong> The application uses the Windborne Systems API to access real-time
+              measurements from global weather stations. When you enter a location query, it geocodes the location
+              using OpenStreetMap Nominatim, then finds the nearest weather stations within a reasonable radius.
             </p>
 
             <p>
-              Ask follow-up questions naturally. &quot;What about tomorrow?&quot; or &quot;How about Tokyo?&quot; and it remembers
-              the conversation context. The interface adapts like Perplexity - search starts centered, then
-              moves to the bottom for continuous conversation.
+              <strong>AI Processing:</strong> Location extraction and analysis are handled by Anthropic&apos;s Claude models.
+              Haiku performs quick location parsing and initial analysis, while Sonnet generates detailed summaries.
+              The analysis streams in real-time using server-sent events, providing immediate feedback while processing.
             </p>
 
             <p>
-              The AI provides quick analysis while streaming, then generates a detailed markdown summary
-              with key findings, temperature conditions, and notable patterns. Interactive charts help you
-              visualize trends in temperature, pressure, and wind speed across multiple stations.
+              <strong>Technical Architecture:</strong> Built with Next.js 15 and React 19, using TypeScript for type safety.
+              The frontend uses TailwindCSS for styling and Recharts for data visualization. The backend implements
+              request queuing to prevent API rate limiting and includes data validation with fallback to historical data
+              when recent measurements aren&apos;t available.
             </p>
 
             <p>
-              Works with both recent and historical data. If recent measurements aren&apos;t available, it analyzes
-              older data and explains the context. Performance optimized to handle multiple conversations and
-              large datasets smoothly. Built because most weather apps show forecasts or generic conditions -
-              this shows real measurements with intelligent analysis.
+              <strong>Data Processing:</strong> The system validates data quality by checking timestamps and measurement
+              completeness. If recent data is sparse, it falls back to historical readings and adjusts the analysis
+              context accordingly. Charts display temperature, pressure, and wind patterns across multiple stations
+              to show regional weather variations.
+            </p>
+
+            <p>
+              <strong>Conversation Context:</strong> Follow-up queries maintain conversation history, allowing contextual
+              questions like &quot;What about tomorrow?&quot; or &quot;How does this compare to last week?&quot; The interface
+              dynamically adapts from a centered search to a bottom-pinned input for continuous interaction.
             </p>
 
             <div className="mt-8 pt-6 border-t border-gray-600">

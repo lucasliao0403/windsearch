@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ChartData } from './WeatherCharts';
 
@@ -29,10 +29,18 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isAnalysisRunningRef = useRef(false);
 
   useEffect(() => {
     if (stations.length === 0 || !isActive) return;
 
+    // Prevent multiple simultaneous analyses
+    if (isAnalysisRunningRef.current) {
+      console.log('🚫 [STREAM] Analysis already running, skipping duplicate request');
+      return;
+    }
+
+    isAnalysisRunningRef.current = true;
     setIsLoading(true);
     setError(null);
     setAnalysis('');
@@ -40,7 +48,6 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
     setIsGeneratingSummary(false);
 
     console.log('🔄 [STREAM] Starting fresh analysis, clearing previous chart data');
-
     console.log('🚀 [STREAM] Starting analysis for', stations.length, 'stations');
 
     // Note: EventSource doesn't support POST directly, using fetch instead
@@ -66,11 +73,13 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
               setError(errorData.error || 'Unable to provide analysis with current data availability.');
               setIsLoading(false);
               setIsGeneratingSummary(false);
+              isAnalysisRunningRef.current = false;
               return; // Don't throw - just show error message
             } catch {
               setError('Unable to provide analysis with current data availability.');
               setIsLoading(false);
               setIsGeneratingSummary(false);
+              isAnalysisRunningRef.current = false;
               return;
             }
           }
@@ -143,6 +152,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
         }
 
         setIsLoading(false);
+        isAnalysisRunningRef.current = false;
         console.log('✅ [STREAM] Analysis completed');
       } catch (fetchError) {
         console.error('💥 [STREAM] Analysis failed:', fetchError);
@@ -162,6 +172,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
 
         setIsLoading(false);
         setIsGeneratingSummary(false);
+        isAnalysisRunningRef.current = false;
       }
     }
 
