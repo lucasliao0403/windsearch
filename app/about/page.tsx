@@ -44,6 +44,14 @@ export default function About() {
               Built using Claude Sonnet and NextJS.
             </p>
 
+            <div className="">
+                <img
+                  src="/windsearch.gif"
+                  alt="WindSearch demo"
+                  className="w-full rounded-lg"
+                />
+              </div>
+
             <div className="mt-8 pt-6 border-t border-gray-600">
               <p className="text-sm text-gray-400">
                 Made by <a href="https://liaolucas.com" className="text-blue-400 hover:text-blue-300 transition-colors">Lucas Liao</a>

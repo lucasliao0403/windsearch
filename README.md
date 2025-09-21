@@ -2,6 +2,11 @@
 
 Ask about weather in plain English. Get real data from actual weather stations.
 
+## [🌤️ TRY HERE](https://windsearch-gm6x.vercel.app/)
+
+![WindSearch Demo](windsearch.gif)
+
+
 ## What it does
 
 Ask "weather in San Francisco" and it finds nearby weather stations, pulls their latest readings, and explains what's happening. Shows real measurements, not forecasts.
@@ -23,7 +28,7 @@ Ask "weather in San Francisco" and it finds nearby weather stations, pulls their
 4. Stream quick analysis, then generate detailed markdown summary
 5. Display interactive charts showing trends across stations
 6. Maintain conversation history for intelligent follow-up questions
-7. Handle data gracefully with lenient validation for older measurements
+7. Handle data with LLM validation for older measurements
 
 ## Tech Stack
 

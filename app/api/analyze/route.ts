@@ -109,18 +109,40 @@ export async function POST(request: Request) {
 
     // Step 1: Fetch weather data for all stations
     console.log('🌤️ [ANALYZE] Fetching weather data for stations...');
+    console.log('📋 [ANALYZE] Station details:', JSON.stringify(stations, null, 2));
+
     const stationDataPromises = stations.map(async (station: StationRequest) => {
       try {
-        const response = await fetch(
-          `${WINDBORNE_API_BASE}/historical_weather?station=${station.station_id}`
-        );
+        const url = `${WINDBORNE_API_BASE}/historical_weather?station=${station.station_id}`;
+        console.log(`🔗 [ANALYZE] Fetching URL: ${url}`);
+        console.log(`📍 [ANALYZE] Station details: ${JSON.stringify(station)}`);
+
+        const response = await fetch(url);
+
+        console.log(`📊 [ANALYZE] Response for ${station.station_id}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
 
         if (!response.ok) {
-          console.log(`⚠️ [ANALYZE] Failed to fetch data for ${station.station_id}`);
+          console.log(`⚠️ [ANALYZE] Failed to fetch data for ${station.station_id} - Status: ${response.status} ${response.statusText}`);
+          const errorText = await response.text();
+          console.log(`💥 [ANALYZE] Error response body for ${station.station_id}:`, errorText);
           return null;
         }
 
-        const data = await response.json();
+        const responseText = await response.text();
+        console.log(`📝 [ANALYZE] Raw response for ${station.station_id} (first 200 chars):`, responseText.substring(0, 200));
+
+        const data = JSON.parse(responseText);
+        console.log(`✅ [ANALYZE] Parsed data for ${station.station_id}:`, {
+          pointsCount: data.points?.length || 0,
+          station: data.station,
+          hasPoints: !!data.points
+        });
+
         return {
           station_id: station.station_id,
           station_name: station.station_name,
@@ -128,6 +150,10 @@ export async function POST(request: Request) {
         };
       } catch (error) {
         console.error(`💥 [ANALYZE] Error fetching data for ${station.station_id}:`, error);
+        console.error(`💥 [ANALYZE] Error details:`, {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
         return null;
       }
     });
