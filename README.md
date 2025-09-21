@@ -8,19 +8,22 @@ Ask "weather in San Francisco" and it finds nearby weather stations, pulls their
 
 - Natural language weather queries with conversational follow-ups
 - Real-time data from global weather stations
-- AI analysis that explains the data clearly
-- Interactive charts showing trends across stations
+- AI analysis with quick insights and detailed summaries
+- Interactive charts showing temperature, pressure, and wind trends
 - Smart context awareness for follow-up questions
 - Perplexity-style interface that moves search to bottom after first query
+- Performance optimized with debouncing and memory management
+- Lenient data validation that works with historical data
 
 ## How it works
 
 1. Extract location from your query using Claude AI (with conversation context)
 2. Find coordinates and nearest weather stations
 3. Pull real-time data from Windborne Systems API
-4. Stream quick analysis, then generate detailed summary
-5. Display charts showing trends across stations
+4. Stream quick analysis, then generate detailed markdown summary
+5. Display interactive charts showing trends across stations
 6. Maintain conversation history for intelligent follow-up questions
+7. Handle data gracefully with lenient validation for older measurements
 
 ## Tech Stack
 

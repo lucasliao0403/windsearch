@@ -17,6 +17,21 @@ export default function SearchInterface({
   setIsSearchFocused,
   showResults
 }: SearchInterfaceProps) {
+  // Performance logging
+  const renderStart = performance.now();
+  console.log('🔄 [PERF] SearchInterface render started');
+
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const changeStart = performance.now();
+    setQuery(e.target.value);
+    console.log(`⌨️ [PERF] Query change took ${performance.now() - changeStart}ms`);
+  };
+
+  // Log render completion
+  setTimeout(() => {
+    console.log(`✅ [PERF] SearchInterface render completed in ${performance.now() - renderStart}ms`);
+  }, 0);
+
   return (
     <div className={`transition-all duration-700 ease-out ${!showResults ? 'animate-in slide-in-from-bottom-4 duration-1000 delay-500' : ''}`}>
       <form onSubmit={onSubmit} className="relative">
@@ -26,7 +41,7 @@ export default function SearchInterface({
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleQueryChange}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
             placeholder={showResults ? "Ask a follow-up question..." : "Ask about weather..."}

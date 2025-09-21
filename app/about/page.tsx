@@ -44,13 +44,16 @@ export default function About() {
             </p>
 
             <p>
-              The AI analysis explains the data in simple terms and shows trends across multiple stations.
-              Charts help you see patterns in temperature, pressure, and wind speed over time.
+              The AI provides quick analysis while streaming, then generates a detailed markdown summary
+              with key findings, temperature conditions, and notable patterns. Interactive charts help you
+              visualize trends in temperature, pressure, and wind speed across multiple stations.
             </p>
 
             <p>
-              Built because most weather apps show forecasts or outdated data. This shows you real measurements
-              from real weather stations, with conversational AI that understands context and follow-ups.
+              Works with both recent and historical data. If recent measurements aren't available, it analyzes
+              older data and explains the context. Performance optimized to handle multiple conversations and
+              large datasets smoothly. Built because most weather apps show forecasts or generic conditions -
+              this shows real measurements with intelligent analysis.
             </p>
 
             <div className="mt-8 pt-6 border-t border-gray-600">

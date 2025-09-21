@@ -26,6 +26,7 @@ interface AnalysisAndChartsProps {
   chartData: ChartData | null;
   onChartsReceived: (data: ChartData) => void;
   isActive?: boolean;
+  isFollowUp?: boolean;
 }
 
 export default function AnalysisAndCharts({
@@ -33,7 +34,8 @@ export default function AnalysisAndCharts({
   searchResult,
   chartData,
   onChartsReceived,
-  isActive = true
+  isActive = true,
+  isFollowUp = false
 }: AnalysisAndChartsProps) {
   if (!showAnalysis || !searchResult?.selectedStations || searchResult.selectedStations.length === 0) {
     return null;
@@ -47,10 +49,11 @@ export default function AnalysisAndCharts({
         stations={searchResult.selectedStations}
         onChartsReceived={onChartsReceived}
         isActive={isActive}
+        isFollowUp={isFollowUp}
       />
 
-      {/* Charts */}
-      {chartData && (
+      {/* Charts - only show for initial queries, not follow-ups */}
+      {!isFollowUp && chartData && (
         <div>
           <h2 className="text-2xl font-bold mb-6">Weather Data Visualization</h2>
           <WeatherCharts data={chartData} />

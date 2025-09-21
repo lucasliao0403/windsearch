@@ -42,6 +42,17 @@ export default function Home() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
   const [currentChartData, setCurrentChartData] = useState<ChartData | null>(null);
 
+  // Performance logging
+  const renderStart = performance.now();
+  console.log('🏠 [PERF] Home component render started');
+  console.log(`📝 [PERF] Conversation state has ${conversation.length} entries`);
+  console.log(`💾 [PERF] Memory estimate: ${JSON.stringify(conversation).length} chars in conversation state`);
+
+  // Log render completion
+  setTimeout(() => {
+    console.log(`🏠 [PERF] Home component render completed in ${performance.now() - renderStart}ms`);
+  }, 0);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -168,6 +179,7 @@ export default function Home() {
                     chartData={index === conversation.length - 1 ? currentChartData : entry.chartData}
                     onChartsReceived={(data) => handleChartsReceived(data, entry.id)}
                     isActive={index === conversation.length - 1}
+                    isFollowUp={index > 0}
                   />
                 </div>
               ))}

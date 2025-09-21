@@ -47,7 +47,13 @@ const COLORS = [
 ];
 
 export default function WeatherCharts({ data }: WeatherChartsProps) {
+  // Performance logging
+  const renderStart = performance.now();
+  console.log('📊 [PERF] WeatherCharts render started');
+  console.log(`📊 [PERF] Chart data points: ${data?.temperature?.length || 0}`);
+
   if (!data || data.temperature.length === 0) {
+    console.log('📊 [PERF] WeatherCharts - no data, returning empty state');
     return (
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:bg-gray-800/60 hover:border-gray-600 transition-all duration-500 ease-out animate-in slide-in-from-left-8 duration-700">
         <p className="text-gray-400">No chart data available</p>
@@ -92,6 +98,11 @@ export default function WeatherCharts({ data }: WeatherChartsProps) {
       [`wind_${point.station_id}`]: point.wind_speed,
       station: point.station_name
     }));
+
+  // Log render completion
+  setTimeout(() => {
+    console.log(`📊 [PERF] WeatherCharts render completed in ${performance.now() - renderStart}ms`);
+  }, 0);
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700 delay-200">
