@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import WeatherCharts from '../components/WeatherCharts';
+import StreamingAnalysis from '../components/StreamingAnalysis';
 
 interface SearchResult {
   query: string;
@@ -17,6 +19,8 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState<any>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +39,12 @@ export default function Home() {
 
       if (response.ok) {
         setSearchResult(data);
+        setShowAnalysis(true);
+        setChartData(null); // Reset chart data for new search
       } else {
         console.error('API Error:', data);
         setSearchResult(null);
+        setShowAnalysis(false);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -45,6 +52,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChartsReceived = (data: any) => {
+    console.log('📊 Received chart data:', data);
+    setChartData(data);
   };
 
   return (
@@ -111,6 +123,26 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Analysis and Charts Section */}
+        {showAnalysis && searchResult?.selectedStations && searchResult.selectedStations.length > 0 && (
+          <div className="space-y-8">
+            {/* Analysis with Streaming */}
+            <StreamingAnalysis
+              query={searchResult.query}
+              stations={searchResult.selectedStations}
+              onChartsReceived={handleChartsReceived}
+            />
+
+            {/* Charts */}
+            {chartData && (
+              <div>
+                <h2 className="text-2xl font-bold mb-6">Weather Data Visualization</h2>
+                <WeatherCharts data={chartData} />
               </div>
             )}
           </div>

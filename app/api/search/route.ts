@@ -11,6 +11,24 @@ const anthropic = new Anthropic({
 const MAX_DISTANCE_KM = 200;
 const MAX_STATION_COUNT = 20;
 
+// Load prompts from file
+let PROMPTS: Record<string, string> = {};
+try {
+  const promptsPath = path.join(process.cwd(), 'prompts.txt');
+  const promptsData = fs.readFileSync(promptsPath, 'utf8');
+
+  // Parse prompts from the file
+  const sections = promptsData.split('## ').slice(1); // Remove empty first element
+  sections.forEach(section => {
+    const lines = section.split('\n');
+    const key = lines[0];
+    const content = lines.slice(1).join('\n').trim();
+    PROMPTS[key] = content;
+  });
+} catch (error) {
+  console.error('Failed to load prompts:', error);
+}
+
 interface Station {
   station_id: string;
   latitude: number;
@@ -164,23 +182,14 @@ function findNearestStations(lat: number, lng: number, stations: Station[], coun
 async function extractLocationFromQuery(query: string): Promise<LocationRequest> {
   console.log('🤖 [LLM] Starting location extraction from query:', query);
 
-  const prompt = `Extract the location from this weather query: "${query}"
-
-Return ONLY a JSON object with this format:
-{
-  "location": "specific location name (city, region, landmark)"
-}
-
-Examples:
-- "weather in San Francisco" → {"location": "San Francisco"}
-- "temperature at Mount Everest" → {"location": "Mount Everest"}
-- "what's the temp in Palo Alto this week" → {"location": "Palo Alto"}`;
+  const prompt = PROMPTS['LOCATION_EXTRACTION_PROMPT']?.replace('{query}', query) ||
+    `Extract location from: "${query}". Return JSON: {"location": "place name"}`;
 
   console.log('📤 [LLM] Sending request to Claude...');
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-3-5-haiku-latest',
       max_tokens: 100,
       messages: [{
         role: 'user',
@@ -268,24 +277,21 @@ async function filterRelevantStations(query: string, stations: Station[]): Promi
 
   if (stations.length === 0) return [];
 
-  const prompt = `Given this weather query: "${query}"
+  const stationsList = stations.map((s, i) =>
+    `${i+1}. ${s.station_id}: ${s.station_name} (${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}) ${s.distance ? s.distance.toFixed(1) + 'km' : ''}`
+  ).join('\n');
 
-Here are the ${stations.length} nearest weather stations:
-${stations.map((s, i) => `${i+1}. ${s.station_id}: ${s.station_name} (${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}) ${s.distance ? s.distance.toFixed(1) + 'km' : ''}`).join('\n')}
-
-Select the most relevant station numbers for this specific query. Consider:
-- Query specificity (city vs region vs country)
-- Geographic relevance and coverage
-- Station location (coastal, inland, urban, rural, airport)
-- Data quality indicators (network type, elevation)
-
-Return ONLY a JSON array of station numbers (1-${stations.length}): [1, 3, 7, ...]`;
+  const prompt = PROMPTS['STATION_FILTERING_PROMPT']
+    ?.replace('{query}', query)
+    ?.replace('{stationCount}', stations.length.toString())
+    ?.replace('{stationsList}', stationsList) ||
+    `Select relevant stations from ${stations.length} options for: "${query}". Return JSON array: [1, 2, 3, ...]`;
 
   console.log('📤 [FILTER] Sending relevance request to Claude...');
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-3-5-haiku-latest',
       max_tokens: 200,
       messages: [{
         role: 'user',

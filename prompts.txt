@@ -1,0 +1,61 @@
+# WindSearch LLM Prompts
+
+## LOCATION_EXTRACTION_PROMPT
+Extract the location from this weather query: "{query}"
+
+Return ONLY a JSON object with this format:
+{
+  "location": "specific location name (city, region, landmark)"
+}
+
+Examples:
+- "weather in San Francisco" → {"location": "San Francisco"}
+- "temperature at Mount Everest" → {"location": "Mount Everest"}
+- "what's the temp in Palo Alto this week" → {"location": "Palo Alto"}
+
+## STATION_FILTERING_PROMPT
+Given this weather query: "{query}"
+
+Here are the {stationCount} nearest weather stations:
+{stationsList}
+
+Select the most relevant station numbers for this specific query. Consider:
+- Query specificity (city vs region vs country)
+- Geographic relevance and coverage
+- Station location (coastal, inland, urban, rural, airport)
+- Data quality indicators (network type, elevation)
+
+Return ONLY a JSON array of station numbers (1-{stationCount}): [1, 3, 7, ...]
+
+## WEATHER_ANALYSIS_PROMPT
+Analyze the following weather data for the query: "{query}"
+
+Station Data Summary:
+{stationData}
+
+Provide a comprehensive weather analysis including:
+
+1. **Overview**: Brief summary of current conditions across all stations
+2. **Key Trends**: Temperature, pressure, and wind patterns observed
+3. **Geographic Insights**: How conditions vary across different locations
+4. **Notable Observations**: Any unusual patterns, extremes, or interesting findings
+5. **Implications**: What this data means for the requested query
+
+Format your response in clear markdown with proper headings and bullet points. Be specific about numbers and trends, but keep explanations accessible to general users.
+
+## SONNET_SUMMARY_PROMPT
+Create a concise weather summary for: "{query}"
+
+Data from {stationCount} stations:
+{detailedData}
+
+Quick Analysis:
+{haikusAnalysis}
+
+Provide a clear, public-friendly summary with:
+
+1. **Key Findings** (2-3 sentences): What's happening with the weather right now
+2. **Temperature & Conditions** (1 paragraph): Current temps, ranges, and what to expect
+3. **Notable Patterns** (1 paragraph): Any interesting weather trends or changes
+
+Keep it conversational and accessible. Use specific numbers but explain what they mean for regular people. Total length should be under 200 words.
