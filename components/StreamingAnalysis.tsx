@@ -30,6 +30,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isAnalysisRunningRef = useRef(false);
+  const isGeneratingSummaryRef = useRef(false);
 
   useEffect(() => {
     if (stations.length === 0 || !isActive) return;
@@ -46,6 +47,7 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
     setAnalysis('');
     setSummary('');
     setIsGeneratingSummary(false);
+    isGeneratingSummaryRef.current = false;
 
     console.log('🔄 [STREAM] Starting fresh analysis, clearing previous chart data');
     console.log('🚀 [STREAM] Starting analysis for', stations.length, 'stations');
@@ -133,14 +135,16 @@ export default function StreamingAnalysis({ query, stations, onChartsReceived, i
                       const newAnalysis = prev + data.content;
                       // console.log('📝 [STREAM] Current analysis length:', newAnalysis.length);
                       // Start showing summary generation after some analysis content
-                      if (newAnalysis.length > 50 && !isGeneratingSummary) {
+                      if (newAnalysis.length > 50 && !isGeneratingSummaryRef.current) {
                         setIsGeneratingSummary(true);
+                        isGeneratingSummaryRef.current = true;
                       }
                       return newAnalysis;
                     });
                   } else if (data.type === 'summary') {
                     console.log('🎯 [STREAM] Received Sonnet summary:', data.content);
                     setIsGeneratingSummary(false);
+                    isGeneratingSummaryRef.current = false;
                     setSummary(data.content);
                   }
                 }
