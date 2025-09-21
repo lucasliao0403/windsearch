@@ -4,8 +4,12 @@ import { useState } from 'react';
 
 interface SearchResult {
   query: string;
-  relevantTimezones: string[];
-  stationsFound: number;
+  extractedLocation: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  nearestStationsFound: number;
   selectedStations: any[];
 }
 
@@ -26,9 +30,18 @@ export default function Home() {
         body: JSON.stringify({ query })
       });
       const data = await response.json();
-      setSearchResult(data);
+
+      console.log('API Response:', data);
+
+      if (response.ok) {
+        setSearchResult(data);
+      } else {
+        console.error('API Error:', data);
+        setSearchResult(null);
+      }
     } catch (error) {
       console.error('Search error:', error);
+      setSearchResult(null);
     } finally {
       setLoading(false);
     }
@@ -65,12 +78,21 @@ export default function Home() {
 
             <div className="mb-4">
               <p className="text-gray-400">Query: <span className="text-white">{searchResult.query}</span></p>
-              <p className="text-gray-400">Timezones: <span className="text-white">{searchResult.relevantTimezones.join(', ') || 'All'}</span></p>
-              <p className="text-gray-400">Stations Found: <span className="text-white">{searchResult.stationsFound}</span></p>
-              <p className="text-gray-400">Selected: <span className="text-white">{searchResult.selectedStations.length}</span></p>
+              {searchResult.extractedLocation && (
+                <p className="text-gray-400">Extracted Location: <span className="text-white">{searchResult.extractedLocation}</span></p>
+              )}
+              {searchResult.coordinates && (
+                <p className="text-gray-400">Coordinates: <span className="text-white">{searchResult.coordinates.lat.toFixed(4)}°, {searchResult.coordinates.lng.toFixed(4)}°</span></p>
+              )}
+              {searchResult.nearestStationsFound !== undefined && (
+                <p className="text-gray-400">Nearest Stations Found: <span className="text-white">{searchResult.nearestStationsFound}</span></p>
+              )}
+              {searchResult.selectedStations && (
+                <p className="text-gray-400">Selected: <span className="text-white">{searchResult.selectedStations.length}</span></p>
+              )}
             </div>
 
-            {searchResult.selectedStations.length > 0 && (
+            {searchResult.selectedStations && searchResult.selectedStations.length > 0 && (
               <div>
                 <h3 className="font-medium mb-2">Selected Weather Stations:</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -79,8 +101,13 @@ export default function Home() {
                       <div className="font-medium">{station.station_name}</div>
                       <div className="text-sm text-gray-400">{station.station_id}</div>
                       <div className="text-sm text-gray-400">
-                        {station.latitude}°, {station.longitude}°
+                        {station.latitude.toFixed(4)}°, {station.longitude.toFixed(4)}°
                       </div>
+                      {station.distance && (
+                        <div className="text-sm text-blue-400">
+                          {station.distance.toFixed(1)}km away
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

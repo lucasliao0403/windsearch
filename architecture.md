@@ -1,24 +1,40 @@
 # WindSearch Architecture
 
-## Overview
-WindSearch is a Perplexity-style AI search interface for weather data. Users ask natural language questions about weather and receive intelligent station selection, data aggregation, and AI-generated summaries with visualizations.
+## High-Level Overview
+WindSearch transforms natural language weather queries into targeted station data retrieval through a 3-stage pipeline:
+
+1. **NLP → Location** - LLM extracts specific location from user query ("temp in Palo Alto")
+2. **Location → Coordinates** - Geocoding API converts location to lat/lng coordinates
+3. **Coordinates → Stations** - Distance calculation finds nearest weather stations within 200km
+
+**Example Flow:**
+```
+"What's the weather in San Francisco?"
+→ LLM extracts "San Francisco"
+→ Geocode to (37.7749, -122.4194)
+→ Find 10 nearest stations within 200km
+→ Return station data with distances
+```
+
+## Detailed Architecture
 
 ## Core Components
 
 ### 1. Query Processing
-- **Location Mapping**: Maps user queries to geographic timezones using predefined location-timezone dictionary
-- **Station Filtering**: Filters 6k+ weather stations by relevant timezones to reduce search space
-- **LLM Selection**: Anthropic Claude analyzes filtered stations and selects 5-10 most relevant for the specific query
+- **LLM Location Extraction**: Claude Haiku extracts location name and requested station count from natural language queries
+- **Geocoding**: OpenStreetMap Nominatim API converts location names to precise coordinates
+- **Distance Calculation**: Haversine formula finds weather stations within configurable radius (200km default)
+- **Nearest Neighbors**: Sorts stations by distance and returns top N results
 
 ### 2. Data Pipeline
-- **Station API**: Fetches all available weather stations with metadata (location, timezone, name)
+- **Station Database**: 54k+ weather stations loaded from stations.json with lat/lng, elevation, timezone metadata
 - **Historical Weather API**: Retrieves time-series data (temperature, wind, pressure, precipitation) for selected stations
 - **Data Aggregation**: Combines multi-station data for analysis and visualization
 
 ### 3. AI Layer
-- **Query Understanding**: LLM interprets natural language queries and identifies geographic scope
-- **Station Intelligence**: Smart selection based on query context (coastal vs inland, urban vs rural, coverage area)
-- **Summary Generation**: AI-generated text insights from aggregated weather data
+- **Query Understanding**: Claude Haiku extracts location entities and station count preferences from natural language
+- **Geographic Intelligence**: Precise coordinate-based station selection eliminates ambiguity of timezone approximations
+- **Summary Generation**: AI-generated text insights from aggregated weather data (future)
 
 ### 4. Response Format
 - **Text Summaries**: Natural language explanations of weather patterns and trends
@@ -39,8 +55,18 @@ WindSearch is a Perplexity-style AI search interface for weather data. Users ask
 - "European weather conditions today"
 
 ## Current Status
-✅ Smart station selection based on geographic queries
+✅ LLM-powered location extraction from natural language queries
+✅ Geocoding API integration (OpenStreetMap Nominatim)
+✅ Geographic distance calculation and nearest neighbor search
+✅ Smart station selection with configurable radius and count
 ✅ Natural language search interface
-🔄 Data aggregation and summary generation
+🔄 Weather data retrieval and aggregation
 🔄 Interactive chart components
-🔄 LLM-powered weather insights
+🔄 LLM-powered weather insights and summaries
+
+## Technical Details
+- **Max Distance**: 200km (configurable constant)
+- **Default Stations**: 10 (max 20, remote locations can request 1)
+- **Station Coverage**: 54k+ global weather stations across 57 timezones
+- **Geocoding**: Free OpenStreetMap API with User-Agent headers
+- **Distance Algorithm**: Haversine formula for earth curvature accuracy
